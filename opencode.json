@@ -1,0 +1,140 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-5",
+  "agent": {
+    "build": {
+      "description": "Primary orchestrator. Uses Sonnet for reasoning, delegates output/tool work to cheaper subagents.",
+      "mode": "primary",
+      "model": "anthropic/claude-sonnet-4-5",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/build.txt}",
+      "permission": {
+        "edit": "ask",
+        "bash": {
+          "*": "ask",
+          "git status": "allow",
+          "git diff *": "allow",
+          "git log *": "allow",
+          "cat *": "allow",
+          "ls *": "allow",
+          "find *": "allow",
+          "grep *": "allow"
+        },
+        "task": {
+          "*": "allow"
+        }
+      }
+    },
+    "plan": {
+      "description": "Read-only planner and architect. Uses Sonnet to think deeply without making changes.",
+      "mode": "primary",
+      "model": "anthropic/claude-sonnet-4-5",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/plan.txt}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "git status": "allow",
+          "git diff *": "allow",
+          "git log *": "allow",
+          "cat *": "allow",
+          "ls *": "allow",
+          "find *": "allow",
+          "grep *": "allow"
+        }
+      }
+    },
+    "writer": {
+      "description": "Cheap file writer subagent. Use for writing boilerplate, scaffolding, or straightforward code output decided by the orchestrator.",
+      "mode": "subagent",
+      "model": "anthropic/claude-haiku-4-5",
+      "temperature": 0.0,
+      "prompt": "{file:./prompts/writer.txt}",
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "*": "deny",
+          "mkdir *": "allow",
+          "touch *": "allow"
+        }
+      }
+    },
+    "executor": {
+      "description": "Cheap tool-calling subagent. Use for running bash commands, tests, linting, builds, and other deterministic shell tasks.",
+      "mode": "subagent",
+      "model": "anthropic/claude-haiku-4-5",
+      "temperature": 0.0,
+      "prompt": "{file:./prompts/executor.txt}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "allow"
+        }
+      }
+    },
+    "explorer": {
+      "description": "Cheap read-only codebase explorer. Use for searching files, reading code, and answering questions about the codebase structure.",
+      "mode": "subagent",
+      "model": "anthropic/claude-haiku-4-5",
+      "temperature": 0.0,
+      "prompt": "{file:./prompts/explorer.txt}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "cat *": "allow",
+          "ls *": "allow",
+          "find *": "allow",
+          "grep *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "wc *": "allow",
+          "tree *": "allow"
+        }
+      }
+    },
+    "reviewer": {
+      "description": "Sonnet-powered code reviewer. Use when a careful, nuanced code review is needed before merging or shipping.",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-5",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/reviewer.txt}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "git diff *": "allow",
+          "git log *": "allow",
+          "grep *": "allow"
+        }
+      }
+    },
+    "compaction": {
+      "description": "Internal system agent that compacts long context. Uses Haiku to keep costs low.",
+      "mode": "subagent",
+      "model": "anthropic/claude-haiku-4-5",
+      "hidden": true,
+      "temperature": 0.0
+    },
+    "title": {
+      "description": "Internal agent for generating session titles.",
+      "mode": "subagent",
+      "model": "anthropic/claude-haiku-4-5",
+      "hidden": true,
+      "steps": 1,
+      "temperature": 0.0
+    },
+    "summary": {
+      "description": "Internal agent for summarizing sessions.",
+      "mode": "subagent",
+      "model": "anthropic/claude-haiku-4-5",
+      "hidden": true,
+      "steps": 1,
+      "temperature": 0.0
+    }
+  },
+  "compaction": {
+    "enabled": true
+  }
+}
